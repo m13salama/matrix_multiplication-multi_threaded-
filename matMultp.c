@@ -128,6 +128,12 @@ void read_matrix(){
 	//Accessing file a.txt and storing value in matrixA
     snprintf( fileSpec1, sizeof( fileSpec1 ), "%s%s", files[0], extension );
 	fptr = fopen(fileSpec1, "r");
+
+	if(fptr == NULL){
+		printf("file can't be opened \n");
+		exit(4);
+	}
+	
     fscanf(fptr, "%[^\n]", str);
 	set_rows_cols(1, str);
 	arra = (int**)malloc(arow * sizeof(int*));
@@ -144,6 +150,12 @@ void read_matrix(){
 	//Accessing file b.txt and storing the value in matrixB
 	snprintf( fileSpec2, sizeof( fileSpec2 ), "%s%s", files[1], extension );	
 	fptr = fopen(fileSpec2, "r");
+
+	if(fptr == NULL){
+		printf("file can't be opened \n");
+		exit(4);
+	}
+
 	fscanf(fptr, "%[^\n]", str);
 	set_rows_cols(2, str);
 	arrb = (int**)malloc(brow * sizeof(int*));
