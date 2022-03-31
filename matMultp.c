@@ -12,7 +12,7 @@ long long int** arrc;
 char *files[3];
 
 //struct to store row, column of a element
-typedef struct Element
+typedef struct Elementclear
 {
 	int row;
 	int col;
@@ -60,6 +60,7 @@ void generateMatrix(){
 void write_file(char *extension){
 	FILE *fptr;
 	char *extend, *print;
+	//write the header line and no of rows, columns
 	if(strcmp(extension,"row")==0){
 		extend = "_per_row.txt";
 		strcpy(print, "Method: A thread per row");
@@ -72,6 +73,7 @@ void write_file(char *extension){
 		extend = "_per_matrix.txt";
 		strcpy(print, "Method: A thread per matrix");
 	}
+	//write the result matrix
     char fileSpec1[strlen(files[2])+strlen(extend)+1];
 	snprintf( fileSpec1, sizeof( fileSpec1 ), "%s%s", files[2], extend );
 	fptr = fopen(fileSpec1, "w");
@@ -111,7 +113,7 @@ void set_rows_cols(int id, char *str){
 		bcol = number;
 	}
 }
-//read the file and stor the matrix in 2d array
+//read the file and store the matrix in 2d array
 void read_matrix(){
 	char* extension = ".txt";
     char fileSpec1[strlen(files[0])+strlen(extension)+1];
@@ -154,6 +156,7 @@ void read_matrix(){
 		}
 	}
 	fclose(fptr);
+	//create matrix c to use it later in storing the result
 	if(arrc == 0){
 		arrc = (long long int**)malloc(arow * sizeof(long long int*));
 		for (int i = 0; i < arow; i++){
@@ -162,13 +165,14 @@ void read_matrix(){
 	}
 
 }
+//the columns of first matrix must equal the rows of the second else exit
 void check_dimension(){
 	if(acol != brow){
 	 	printf("Matix Multiplication is not possible due to dimension conflicts\n");
 		exit(5);
 	}
 }
-//first approach
+//first approach thread per matrix
 void *mat_mat(){
 	check_dimension();
 	//Matrix Multiplication
@@ -183,6 +187,7 @@ void *mat_mat(){
 	}	
 }
 
+//first approach thread per row
 void *row_mat(int row){
 	//Matrix Multiplication by row
 	check_dimension();
@@ -194,6 +199,8 @@ void *row_mat(int row){
 		arrc[row][j] = sum;
 	}
 }
+
+//first approach thread per element
 void *element_mat(void *ele){
 		check_dimension();
 	element* e1=(element*)ele;
@@ -205,6 +212,8 @@ void *element_mat(void *ele){
 	arrc[(*e1).row][(*e1).col] = sum;
 	free(ele);
 }
+
+//create threads of the first approach
 void mult_per_matrix(){
 	pthread_t thread;
 	if (pthread_create(&thread, NULL, &mat_mat, NULL) != 0) {
@@ -217,7 +226,7 @@ void mult_per_matrix(){
 	char* extension = "matrix";
 	write_file(extension);
 }
-
+//create threads of the second approach
 void mult_per_row(){
 	pthread_t th[arow];
     for (int i = 0; i < arow; i++) {
@@ -235,6 +244,7 @@ void mult_per_row(){
 	write_file(extension);
 }
 
+//create threads of the third approach
 void mult_per_element(){
 	pthread_t th[arow][bcol];
     int i;
@@ -260,30 +270,7 @@ void mult_per_element(){
 	char* extension = "element";
 	write_file(extension);
 }
-void test(){
-	FILE *fptr;
-	char str[10000];
-	int num;
-	 fptr = fopen("b.txt", "r");
-     fscanf(fptr, "%[^\n]", str);
-	  set_rows_cols(1, str);
-	 arra = (int**)malloc(arow * sizeof(int*));
-    for (int i = 0; i < arow; i++)
-        arra[i] = (int*)malloc(acol * sizeof(int));
-	for(int i=0; i<arow; i++){
-	 	for(int j=0; j<acol; j++){
-			fscanf(fptr, "%d", &num);
-			arra[i][j] = num;
-		}
-	}
-	fclose(fptr);
-	if(arrc == 0){
-		arrc = (long long int**)malloc(arow * sizeof(long long int*));
-		for (int i = 0; i < arow; i++){
-			arrc[i] = (long long int*)malloc(bcol * sizeof(long long int));
-		}
-	}
-}
+
 int main(int argc, char *argv[]){
 	struct timeval stop, start;
     if( argc == 4) {
@@ -304,26 +291,32 @@ int main(int argc, char *argv[]){
 		printf("you should enter name of the 3 files\n");
 		exit(1);
 	}
+	//un comment next line if you want to generate random matrices
 	//generateMatrix();
 	read_matrix();
+	
+	//calculate time of first approach
 	gettimeofday(&start, NULL); //start checking time
 	mult_per_matrix();
 	gettimeofday(&stop, NULL); //end checking time
     printf("Seconds taken for matrix threads %lu\n", stop.tv_sec - start.tv_sec);
     printf("Microseconds taken for matrix threads : %lu\n", stop.tv_usec - start.tv_usec);
 
+	//calculate time of second approach
 	gettimeofday(&start, NULL); //start checking time
 	mult_per_row();
 	gettimeofday(&stop, NULL); //end checking time
     printf("Seconds taken for row threads %lu\n", stop.tv_sec - start.tv_sec);
     printf("Microseconds taken for row threads : %lu\n", stop.tv_usec - start.tv_usec);
 
+	//calculate time of third approach
 	gettimeofday(&start, NULL); //start checking time
 	mult_per_element();
 	gettimeofday(&stop, NULL); //end checking time
     printf("Seconds taken for element threads %lu\n", stop.tv_sec - start.tv_sec);
     printf("Microseconds taken for element threads : %lu\n", stop.tv_usec - start.tv_usec);
 
+	//free the arrays
     for (int i = 0; i < arow; i++)
         free(arra[i]);
 	free(arra);
